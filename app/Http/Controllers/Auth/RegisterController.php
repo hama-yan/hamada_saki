@@ -3,45 +3,49 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\RegisterRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
 {
-    // ユーザー登録フォームの表示
-    public function showRegistrationForm()
+    use RegistersUsers;
+
+    /**
+     * 登録後のリダイレクト先
+     *
+     * @var string
+     */
+    protected $redirectTo = '/home';
+
+    /**
+     * バリデーションの定義
+     *
+     * @param  array  $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
+    protected function validator(array $data)
     {
-        return view('auth.register');
-    }
-    // ユーザー登録処理
-    public function register(Request $request)
-    {
-        // バリデーションとユーザー作成処理を実装
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+        return Validator::make($data, [
+            'username' => ['required', 'string', 'min:2', 'max:12'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
-
-        // ユーザー作成
-        $user = User::create([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => Hash::make($request->input('password')),
-        ]);
-
-        // ユーザーをログイン状態にする
-        Auth::login($user);
-
-        // ホームページへリダイレクト
-        return redirect()->route('home')->with('success', 'ユーザー登録が完了しました。');
-
-        // ダッシュボードなどへのリダイレクト
-        return redirect()->route('dashboard');
     }
 
-
+    /**
+     * ユーザー作成の定義
+     *
+     * @param  array  $data
+     * @return \App\Models\User
+     */
+    protected function create(array $data)
+    {
+        return User::create([
+            'username' => $data['username'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+        ]);
+    }
 }
